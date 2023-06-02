@@ -1,0 +1,54 @@
+import selenium
+from selenium import webdriver
+from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+
+# initialise drivers 
+driver = webdriver.Safari()
+url = 'https://flo.uri.sh/visualisation/4233039/embed'
+
+geturl = driver.get(url)
+
+# read html page for the SVG headers, and filter for relevant elements
+soup = BeautifulSoup(driver.page_source, 'lxml')
+
+trolley = soup.find("div",{"id":"pw-by-quarter-svg-all"})
+trolley = trolley.find_all('svg', id=True)
+
+trolleyClean =[]
+
+# store relavant SVG id into list to query
+for t in trolley:
+    
+    trolleyClean.append(t.get('id'))
+
+trolleyClean.pop(0)
+
+# function to get data linked to SVG id
+def getNumbers(id, data, date):
+
+    element = driver.find_element(By.ID, id)
+    element = element.get_property('__data__')
+    
+    for i in element.keys():
+        
+        if i != "Total" and i!= "Year":
+            data.append(element.get(i))
+            date.append(str(element.get('Year')) + str(i))
+
+    return data, date
+
+# list to store data
+data =[]
+date=[]
+
+# run main code
+for i in trolleyClean:
+    
+    data, date = getNumbers(i, data, date)
+   
+    
+print(date)
+print(data)
+    
+driver.quit()
