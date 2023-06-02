@@ -1,0 +1,73 @@
+import selenium
+import time
+from selenium import webdriver
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium import *
+from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+
+# initialise drivers 
+driver = webdriver.Safari()
+url = 'https://www.fxstreet.com/economic-calendar/event/f21a55ef-8d4b-4970-8f7e-0100bae77407'
+# must place graph in view to load html
+driver.set_window_size(900,1200)
+geturl = driver.get(url)
+
+# load initial html
+soup = BeautifulSoup(driver.page_source, 'lxml')
+
+# wait for pop up to click
+WebDriverWait(driver,10).until(EC.element_to_be_clickable((By.CLASS_NAME, "fxs_prestitial-continue")))
+driver.find_element(By.CLASS_NAME, "fxs_prestitial-continue").click()
+
+# wait for cookies to click
+time.sleep(10)
+driver.find_element(By.XPATH,'//*[@id="onesignal-slidedown-allow-button"]').click()
+
+# wait for data to load then click table tab
+time.sleep(10)
+driver.find_element(By.XPATH, '//*[@id="Content_C025_Col00"]/div[2]/div/div/div[1]/ul/li[2]').click()
+# driver.find_element(By.NAME, "features-calendar-tab-historical_data").click()
+
+time.sleep(3)
+
+# load new html with new files
+soup = BeautifulSoup(driver.page_source, 'lxml')
+
+# find table element
+trolley = soup.find("table",{"class":"fxs_table fxs_table_striped"})
+trolley = trolley.find_all("tr")
+
+# loop through diff dates on table
+for i in trolley:
+    
+    # code i1 to extract dates
+    i1 = i.find_all("td", {"class":"fxs_period"})
+    i1 = str(i1)
+    # example [<td class="fxs_period"><span>12/01/2009</span> <span>(<span>Nov</span>)</span></td>]
+    date = i1[-24:-21]
+    year = i1[-49:-45]
+    print("\n\n",date)
+    print(year)
+    
+    #i2 to extract data points, calculate from reverse because actuals tag has comments
+    i2 = i.find_all("td", {"class":"fxs_bold"})
+    
+    # catch if missing data
+    if i2[1].text =='':
+        i2[1]=0
+    else:
+        i2[1]=float(i2[1].text)
+        
+    if i2[2].text =='':
+        i2[2]=0
+        i2[1]=0
+    else:
+        i2[2]=float(i2[2].text)
+        
+    number = round(i2[1] + i2[2], 2)
+    print(number)
+
+
+driver.quit()
